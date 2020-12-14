@@ -89,6 +89,121 @@ func TestGetTTLFromAnnotations(t *testing.T) {
 	}
 }
 
+func TestGetSRVRecordTypeValuesFromAnnotations(t *testing.T) {
+	svcName := "testSvc"
+	for _, tc := range []struct {
+		title       string
+		annotations map[string]string
+		expectedPriority int64
+		expectedWeight int64
+		expectedPort int64
+		expectedErr error
+	}{
+		{
+			title: "SRV Priority annotation does not exist",
+			annotations: map[string]string{"foo": "bar"},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("must specify priority value for SRV record. service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Priority annotation is not a number",
+			annotations: map[string]string{srvRecordTypePriorityAnnotationKey: "foo"},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("priorty value must be int number, got \"foo\". service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Weight annotation does not exist",
+			annotations: map[string]string{srvRecordTypePriorityAnnotationKey: "0"},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("must specify weight value for SRV record. service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Weight annotation is not a number",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "0",
+				srvRecordTypeWeightAnnotationKey: "foo",
+			},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("weight value must be int number, got \"foo\". service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Port annotation does not exist",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "0",
+				srvRecordTypeWeightAnnotationKey: "0",
+			},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("must specify port value for SRV record. service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Port annotation is not a number",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "0",
+				srvRecordTypeWeightAnnotationKey: "0",
+				srvRecordTypePortAnnotationKey: "foo",
+			},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("port value must be int number, got \"foo\". service \"%v\"", svcName),
+		},
+		{
+			title: "SRV Port annotation is a negative number",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "0",
+				srvRecordTypeWeightAnnotationKey: "0",
+				srvRecordTypePortAnnotationKey: "-1",
+			},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("port value must be between [%d, %d], got \"-1\". service \"%v\"", portMinimum, portMaximum, svcName),
+		},
+		{
+			title: "SRV Port annotation is too high",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "0",
+				srvRecordTypeWeightAnnotationKey: "0",
+				srvRecordTypePortAnnotationKey: "100000",
+			},
+			expectedPriority: 0,
+			expectedWeight: 0,
+			expectedPort: 0,
+			expectedErr: fmt.Errorf("port value must be between [%d, %d], got \"100000\". service \"%v\"", portMinimum, portMaximum, svcName),
+		},
+		{
+			title: "SRV annotations is set correctly",
+			annotations: map[string]string{
+				srvRecordTypePriorityAnnotationKey: "5",
+				srvRecordTypeWeightAnnotationKey: "7",
+				srvRecordTypePortAnnotationKey: "443",
+			},
+			expectedPriority: 5,
+			expectedWeight: 7,
+			expectedPort: 443,
+			expectedErr: nil,
+		},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			priority, weight, port, err := getSRVRecordTypeValuesFromAnnotations(svcName, tc.annotations)
+			assert.Equal(t, tc.expectedPriority, priority)
+			assert.Equal(t, tc.expectedWeight, weight)
+			assert.Equal(t, tc.expectedPort, port)
+			assert.Equal(t, tc.expectedErr, err)
+		})
+	}
+}
+
 func TestSuitableType(t *testing.T) {
 	for _, tc := range []struct {
 		target, recordType, expected string
