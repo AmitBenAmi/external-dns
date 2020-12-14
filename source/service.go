@@ -455,6 +455,13 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 		DNSName:    hostname,
 	}
 
+	recordTypeEp := &endpoint.Endpoint{
+		RecordTTL: ttl,
+		Labels: endpoint.NewLabels(),
+		Targets: make(endpoint.Targets, 0, defaultTargetsCapacity),
+		DNSName: hostname,
+	}
+
 	var endpoints []*endpoint.Endpoint
 	var targets endpoint.Targets
 
@@ -480,15 +487,29 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 		targets = append(targets, extractServiceExternalName(svc)...)
 	}
 
+	recordType := getRecordTypeFromAnnotations(svc.Annotations)
 	for _, t := range targets {
-		if suitableType(t) == endpoint.RecordTypeA {
-			epA.Targets = append(epA.Targets, t)
-		}
-		if suitableType(t) == endpoint.RecordTypeCNAME {
-			epCNAME.Targets = append(epCNAME.Targets, t)
+		switch recordType {
+		case endpoint.RecordTypeSRV:
+			recordTypeEp.RecordType = endpoint.RecordTypeSRV
+			priority, weight, port, err := getSRVRecordTypeValues(svc.Name, svc.Annotations)
+			if err != nil {
+				log.Warn(err)
+			}
+			recordTypeEp.Targets = append(recordTypeEp.Targets, fmt.Sprintf("%d %d %d %v", priority, weight, port, t))
+		default:
+			if suitableType(t) == endpoint.RecordTypeA {
+				epA.Targets = append(epA.Targets, t)
+			}
+			if suitableType(t) == endpoint.RecordTypeCNAME {
+				epCNAME.Targets = append(epCNAME.Targets, t)
+			}
 		}
 	}
 
+	if len(recordTypeEp.Targets) > 0 {
+		endpoints = append(endpoints, recordTypeEp)
+	}
 	if len(epA.Targets) > 0 {
 		endpoints = append(endpoints, epA)
 	}
