@@ -295,7 +295,7 @@ func getSRVRecordTypeValuesFromAnnotations(svcName string, annotations map[strin
 	}
 	weightValue, err := strconv.ParseInt(weight, 10, 64)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("weight value must be int number, got \"%v\". service \"%v\"", priority, svcName)
+		return 0, 0, 0, fmt.Errorf("weight value must be int number, got \"%v\". service \"%v\"", weight, svcName)
 	}
 
 	port, exist := annotations[srvRecordTypePortAnnotationKey]
@@ -304,9 +304,9 @@ func getSRVRecordTypeValuesFromAnnotations(svcName string, annotations map[strin
 	}
 	portValue, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("port value must be int number, got \"%v\". service \"%v\"", priority, svcName)
+		return 0, 0, 0, fmt.Errorf("port value must be int number, got \"%v\". service \"%v\"", port, svcName)
 	} else if portValue < portMaximum || portValue > portMaximum {
-		return 0, 0, 0, fmt.Errorf("port value must be between [%d, %d], got \"%v\". service \"%v\"", portMinimum, portMaximum, priority, svcName)
+		return 0, 0, 0, fmt.Errorf("port value must be between [%d, %d], got \"%v\". service \"%v\"", portMinimum, portMaximum, port, svcName)
 	}
 
 	return priorityValue, weightValue, portValue, nil
