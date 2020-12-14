@@ -492,7 +492,7 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 		switch recordType {
 		case endpoint.RecordTypeSRV:
 			recordTypeEp.RecordType = endpoint.RecordTypeSRV
-			priority, weight, port, err := getSRVRecordTypeValues(svc.Name, svc.Annotations)
+			priority, weight, port, err := getSRVRecordTypeValuesFromAnnotations(svc.Name, svc.Annotations)
 			if err != nil {
 				log.Warn(err)
 			}

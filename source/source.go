@@ -279,7 +279,7 @@ func poll(interval time.Duration, timeout time.Duration, condition wait.Conditio
 	return wait.Poll(interval, timeout, condition)
 }
 
-func getSRVRecordTypeValues(svcName string, annotations map[string]string) (int64, int64, int64, error) {
+func getSRVRecordTypeValuesFromAnnotations(svcName string, annotations map[string]string) (int64, int64, int64, error) {
 	priority, exist := annotations[srvRecordTypePriorityAnnotationKey]
 	if !exist {
 		return 0, 0, 0, fmt.Errorf("must specify priority value for SRV record. service \"%v\"", svcName)
