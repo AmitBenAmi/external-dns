@@ -133,7 +133,11 @@ func getAliasFromAnnotations(annotations map[string]string) bool {
 }
 
 func getRecordTypeFromAnnotations(annotations map[string]string) string {
-	return annotations[recordTypeAnnotationKey]
+	recordType, exists := annotations[recordTypeAnnotationKey]
+	if !exists {
+		return ""
+	}
+	return recordType
 }
 
 func getProviderSpecificAnnotations(annotations map[string]string) (endpoint.ProviderSpecific, string) {
