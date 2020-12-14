@@ -495,8 +495,9 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 			priority, weight, port, err := getSRVRecordTypeValuesFromAnnotations(svc.Name, svc.Annotations)
 			if err != nil {
 				log.Warn(err)
+			} else {
+				recordTypeEp.Targets = append(recordTypeEp.Targets, fmt.Sprintf("%d %d %d %v", priority, weight, port, t))
 			}
-			recordTypeEp.Targets = append(recordTypeEp.Targets, fmt.Sprintf("%d %d %d %v", priority, weight, port, t))
 		default:
 			if suitableType(t) == endpoint.RecordTypeA {
 				epA.Targets = append(epA.Targets, t)
