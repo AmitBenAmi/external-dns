@@ -305,7 +305,7 @@ func getSRVRecordTypeValuesFromAnnotations(svcName string, annotations map[strin
 	portValue, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("port value must be int number, got \"%v\". service \"%v\"", port, svcName)
-	} else if portValue < portMaximum || portValue > portMaximum {
+	} else if portValue > portMaximum || portValue < portMinimum {
 		return 0, 0, 0, fmt.Errorf("port value must be between [%d, %d], got \"%v\". service \"%v\"", portMinimum, portMaximum, port, svcName)
 	}
 
