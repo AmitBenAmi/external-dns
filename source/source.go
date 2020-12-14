@@ -46,8 +46,20 @@ const (
 	ttlAnnotationKey = "external-dns.alpha.kubernetes.io/ttl"
 	// The annotation used for switching to the alias record types e. g. AWS Alias records instead of a normal CNAME
 	aliasAnnotationKey = "external-dns.alpha.kubernetes.io/alias"
+	// The annotation used to enable record types other than A/CNAME
+	recordTypeAnnotationKey = "external-dns.alpha.kubernetes.io/record-type"
 	// The value of the controller annotation so that we feel responsible
 	controllerAnnotationValue = "dns-controller"
+)
+
+// SRV Record type specific annotations
+const (
+	// Priority value for SRV records
+	srvRecordTypePriorityAnnotationKey = "external-dns.alpha.kubernetes.io/srv-priority"
+	// Weight value for SRV records
+	srvRecordTypeWeightAnnotationKey = "external-dns.alpha.kubernetes.io/srv-weight"
+	// Port value for SRV records
+	srvRecordTypePortAnnotationKey = "external-dns.alpha.kubernetes.io/srv-port"
 )
 
 // Provider-specific annotations
@@ -61,6 +73,8 @@ const (
 const (
 	ttlMinimum = 1
 	ttlMaximum = math.MaxInt32
+	portMinimum = 0
+	portMaximum = 65535
 )
 
 // Source defines the interface Endpoint sources should implement.
@@ -116,6 +130,10 @@ func getAccessFromAnnotations(annotations map[string]string) string {
 func getAliasFromAnnotations(annotations map[string]string) bool {
 	aliasAnnotation, exists := annotations[aliasAnnotationKey]
 	return exists && aliasAnnotation == "true"
+}
+
+func getRecordTypeFromAnnotations(annotations map[string]string) string {
+	return annotations[recordTypeAnnotationKey]
 }
 
 func getProviderSpecificAnnotations(annotations map[string]string) (endpoint.ProviderSpecific, string) {
@@ -259,4 +277,37 @@ func poll(interval time.Duration, timeout time.Duration, condition wait.Conditio
 	}
 
 	return wait.Poll(interval, timeout, condition)
+}
+
+func getSRVRecordTypeValues(svcName string, annotations map[string]string) (int64, int64, int64, error) {
+	priority, exist := annotations[srvRecordTypePriorityAnnotationKey]
+	if !exist {
+		return 0, 0, 0, fmt.Errorf("must specify priority value for SRV record. service \"%v\"", svcName)
+	}
+	priorityValue, err := strconv.ParseInt(priority, 10, 64)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("priorty value must be int number, got \"%v\". service \"%v\"", priority, svcName)
+	}
+
+	weight, exist := annotations[srvRecordTypeWeightAnnotationKey]
+	if !exist {
+		return 0, 0, 0, fmt.Errorf("must specify weight value for SRV record. service \"%v\"", svcName)
+	}
+	weightValue, err := strconv.ParseInt(weight, 10, 64)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("weight value must be int number, got \"%v\". service \"%v\"", priority, svcName)
+	}
+
+	port, exist := annotations[srvRecordTypePortAnnotationKey]
+	if !exist {
+		return 0, 0, 0, fmt.Errorf("must specify port value for SRV record. service \"%v\"", svcName)
+	}
+	portValue, err := strconv.ParseInt(port, 10, 64)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("port value must be int number, got \"%v\". service \"%v\"", priority, svcName)
+	} else if portValue < portMaximum || portValue > portMaximum {
+		return 0, 0, 0, fmt.Errorf("port value must be between [%d, %d], got \"%v\". service \"%v\"", portMinimum, portMaximum, priority, svcName)
+	}
+
+	return priorityValue, weightValue, portValue, nil
 }
