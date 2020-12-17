@@ -561,5 +561,14 @@ func extractAzureTargets(recordSet *dns.RecordSet) []string {
 			return []string{(*values)[0]}
 		}
 	}
+
+	srvRecords := properties.SrvRecords
+	if srvRecords != nil && len(*srvRecords) >0 && (*srvRecords)[0].Target != nil {
+		targets := make([]string, len(*srvRecords))
+		for i, record := range *srvRecords {
+			targets[i] = endpoint.CreateSRVTarget(int64(*record.Priority), int64(*record.Weight), int64(*record.Port), *record.Target)
+		}
+		return targets
+	}
 	return []string{}
 }
