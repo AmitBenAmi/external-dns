@@ -251,8 +251,13 @@ func (p *AzureProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	}
 
 	deleted, updated := p.mapChanges(zones, changes)
-	p.deleteRecords(ctx, deleted)
-	p.updateRecords(ctx, updated)
+
+	if len(deleted) == 0 && len(updated) == 0 {
+		log.Info("All records are already up to date")
+	} else {
+		p.deleteRecords(ctx, deleted)
+		p.updateRecords(ctx, updated)
+	}
 	return nil
 }
 
