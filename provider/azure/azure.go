@@ -570,5 +570,14 @@ func extractAzureTargets(recordSet *dns.RecordSet) []string {
 		}
 		return targets
 	}
+
+	nsRecords := properties.NsRecords
+	if nsRecords != nil && len(*nsRecords) > 0 && (*nsRecords)[0].Nsdname != nil {
+		targets := make([]string, len(*nsRecords))
+		for i, record := range *nsRecords {
+			targets[i] = *record.Nsdname
+		}
+		return targets
+	}
 	return []string{}
 }
