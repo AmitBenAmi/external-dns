@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -39,6 +40,7 @@ import (
 
 const (
 	azureRecordTTL = 300
+	srvTargetParts = 4
 )
 
 type config struct {
@@ -482,6 +484,38 @@ func (p *AzureProvider) newRecordSet(endpoint *endpoint.Endpoint) (dns.RecordSet
 						},
 					},
 				},
+			},
+		}, nil
+	case dns.SRV:
+		srvRecords := make([]dns.SrvRecord, len(endpoint.Targets))
+		for i, target := range endpoint.Targets {
+			parts := strings.SplitN(target, " ", srvTargetParts)
+			if len(parts) == srvTargetParts {
+				priority, errPriority := strconv.Atoi(parts[0])
+				weight, errWeight := strconv.Atoi(parts[1])
+				port, errPort := strconv.Atoi(parts[2])
+				srvTarget := parts[3]
+
+				if errPriority != nil || errWeight != nil || errPort != nil {
+					return dns.RecordSet{}, fmt.Errorf("SRV record type priority/weight/port doesn't configured well")
+				}
+
+				priority32 := int32(priority)
+				weight32 := int32(weight)
+				port32 := int32(port)
+
+				srvRecords[i] = dns.SrvRecord{
+					Priority: &priority32,
+					Weight: &weight32,
+					Port: &port32,
+					Target: &srvTarget,
+				}
+			}
+		}
+		return dns.RecordSet{
+			RecordSetProperties: &dns.RecordSetProperties{
+				TTL: to.Int64Ptr(ttl),
+				SrvRecords: &srvRecords,
 			},
 		}, nil
 	}
