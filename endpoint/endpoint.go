@@ -111,6 +111,10 @@ func (t Targets) IsLess(o Targets) bool {
 	return false
 }
 
+func CreateSRVTarget(priority int64, weight int64, port int64, target string) string {
+	return fmt.Sprintf("%d %d %d %v", priority, weight, port, target)
+}
+
 // ProviderSpecificProperty holds the name and value of a configuration which is specific to individual DNS providers
 type ProviderSpecificProperty struct {
 	Name  string `json:"name,omitempty"`
